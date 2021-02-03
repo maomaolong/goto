@@ -2,27 +2,17 @@
 package main
 
 import (
-	"fmt"
+	"goto/got"
 	"log"
 	"net/http"
 )
 
 func main() {
-	http.HandleFunc("/", Redirect)
-	http.HandleFunc("/add", Add)
+	http.HandleFunc("/", got.Redirect)
+	http.HandleFunc("/add", got.Add)
 	log.Println("http server listening on :8000")
 	err := http.ListenAndServe(":8000", nil)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-}
-
-func Add(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Add")
-	fmt.Fprint(w, "Add")
-}
-
-func Redirect(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Redirect")
-	fmt.Fprint(w, "Redirect")
 }
