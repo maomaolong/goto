@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"sync/atomic"
 )
 
 type UrlMap map[string]string
 
 type Store struct {
-	key  int
+	key  int64
 	urls UrlMap
 }
 
@@ -40,8 +42,8 @@ func (s *Store) GetShort(key string) (string, error) {
 }
 
 func (s *Store) getKey() string {
-	s.key += 1
-	return strconv.Itoa(s.key)
+	atomic.AddInt64(&s.key, 1)
+	return strconv.FormatInt(s.key, 10)
 }
 
 func NewStore() *Store {
