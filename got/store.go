@@ -4,28 +4,33 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-
+	"sync"
 	"sync/atomic"
 )
 
 type UrlMap map[string]string
 
 type Store struct {
+	rw   sync.RWMutex
 	key  int64
 	urls UrlMap
 }
 
 func (s *Store) Add(url string) (string, error) {
-	key := s.getKey()
+	s.rw.Lock()
+	defer s.rw.Unlock()
+	key := s.createKey()
 	_, ok := s.urls[key]
 	if ok {
 		return "", errors.New(key + "is exist")
 	}
 	s.urls[key] = url
-	return s.GetShort(key)
+	return fmt.Sprintf("http://localhost:8000/%s", key), nil
 }
 
 func (s *Store) Get(key string) (string, error) {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	v, ok := s.urls[key]
 	if !ok {
 		return "", errors.New(key + "is not exist")
@@ -33,15 +38,7 @@ func (s *Store) Get(key string) (string, error) {
 	return v, nil
 }
 
-func (s *Store) GetShort(key string) (string, error) {
-	_, ok := s.urls[key]
-	if !ok {
-		return "", errors.New(key + "is not exist")
-	}
-	return fmt.Sprintf("http://localhost:8000/%s", key), nil
-}
-
-func (s *Store) getKey() string {
+func (s *Store) createKey() string {
 	atomic.AddInt64(&s.key, 1)
 	return strconv.FormatInt(s.key, 10)
 }
