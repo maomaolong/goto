@@ -1,4 +1,4 @@
-package got
+package master
 
 import (
 	"encoding/json"

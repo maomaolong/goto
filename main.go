@@ -4,24 +4,22 @@ package main
 import (
 	"flag"
 	"fmt"
-	"goto/got"
+	"goto/master"
 	"log"
 	"net/http"
 )
 
 var port int
-var master string
 
 func init() {
 	flag.IntVar(&port, "port", 8000, "listening port")
-	flag.StringVar(&master, "master", "", "master's address")
 	flag.Parse()
 }
 
 func main() {
-	http.HandleFunc("/", got.Redirect)
-	http.HandleFunc("/add", got.Add)
-	http.HandleFunc("/show", got.Show)
+	http.HandleFunc("/", master.Redirect)
+	http.HandleFunc("/add", master.Add)
+	http.HandleFunc("/show", master.Show)
 	addr := fmt.Sprintf(":%d", port)
 	log.Println("http server listening on " + addr)
 	err := http.ListenAndServe(addr, nil)
