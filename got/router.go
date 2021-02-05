@@ -9,7 +9,8 @@ import (
 )
 
 var formStr = `<form action="/add" method="post">
-URL: <input type="text" name="url">
+KEY: <input type="text" name="key"><br/>
+URL: <input type="text" name="url"><br/>
 <input type="submit" value="提交">
 </form>`
 
@@ -25,12 +26,13 @@ func Add(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, formStr)
 	} else {
-		short, err := store.Add(url)
+		key := r.PostFormValue("key")
+		err := store.Add(key, url)
 		if err != nil {
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		fmt.Fprint(w, short)
+		fmt.Fprint(w, key)
 	}
 }
 

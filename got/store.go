@@ -3,13 +3,10 @@ package got
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"sync"
-	"sync/atomic"
 )
 
 type UrlMap map[string]string
@@ -22,7 +19,6 @@ type Store struct {
 	saveChan chan record
 	file     *os.File
 	rw       sync.RWMutex
-	key      int64
 	urls     UrlMap
 }
 
@@ -44,17 +40,16 @@ func NewStore() *Store {
 	return store
 }
 
-func (s *Store) Add(url string) (string, error) {
+func (s *Store) Add(key, url string) error {
 	s.rw.Lock()
 	defer s.rw.Unlock()
-	key := s.createKey()
 	_, ok := s.urls[key]
 	if ok {
-		return "", errors.New(key + "is exist")
+		return errors.New(key + "is exist")
 	}
 	s.urls[key] = url
 	s.saveChan <- record{key, url}
-	return fmt.Sprintf("http://localhost:8000/%s", key), nil
+	return nil
 }
 
 func (s *Store) Get(key string) (string, error) {
@@ -79,22 +74,12 @@ func (s *Store) set(key, url string) {
 	s.urls[key] = url
 }
 
-func (s *Store) createKey() string {
-	atomic.AddInt64(&s.key, 1)
-	return strconv.FormatInt(s.key, 10)
-}
-
 func (s *Store) load() error {
 	decoder := json.NewDecoder(s.file)
 	var err error
 	for err == nil {
 		var r record
 		if err = decoder.Decode(&r); err == nil {
-			var err1 error
-			s.key, err1 = strconv.ParseInt(r.Key, 10, 64)
-			if err1 != nil {
-				log.Println(err1.Error())
-			}
 			s.set(r.Key, r.Url)
 		}
 	}
