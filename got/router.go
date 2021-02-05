@@ -27,7 +27,7 @@ func Add(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, formStr)
 	} else {
 		key := r.PostFormValue("key")
-		err := store.Add(key, url)
+		err := store.Add(&key, &url)
 		if err != nil {
 			fmt.Fprint(w, err.Error())
 			return
@@ -37,12 +37,14 @@ func Add(w http.ResponseWriter, r *http.Request) {
 }
 
 func Redirect(w http.ResponseWriter, r *http.Request) {
-	path, err := store.Get(r.URL.Path[1:])
-	log.Println("path", path)
+	var key = r.URL.Path[1:]
+	var path string
+	err := store.Get(&key, &path)
 	if err != nil {
 		fmt.Fprint(w, err.Error())
 		return
 	}
+	log.Println("path", path)
 	http.Redirect(w, r, path, http.StatusFound)
 }
 
