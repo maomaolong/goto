@@ -26,10 +26,22 @@ type Store struct {
 	urls     UrlMap
 }
 
-func (s *Store) Set(key, url string) {
-	s.rw.Lock()
-	defer s.rw.Unlock()
-	s.urls[key] = url
+func NewStore() *Store {
+	store := &Store{
+		saveChan: make(chan record, 100),
+		urls:     make(UrlMap),
+	}
+	f, err := os.OpenFile("store.json", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	store.file = f
+	err = store.load()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	go store.save()
+	return store
 }
 
 func (s *Store) Add(url string) (string, error) {
@@ -55,6 +67,12 @@ func (s *Store) Get(key string) (string, error) {
 	return v, nil
 }
 
+func (s *Store) set(key, url string) {
+	s.rw.Lock()
+	defer s.rw.Unlock()
+	s.urls[key] = url
+}
+
 func (s *Store) createKey() string {
 	atomic.AddInt64(&s.key, 1)
 	return strconv.FormatInt(s.key, 10)
@@ -71,7 +89,7 @@ func (s *Store) load() error {
 			if err1 != nil {
 				log.Println(err1.Error())
 			}
-			s.Set(r.Key, r.Url)
+			s.set(r.Key, r.Url)
 		}
 	}
 	if err == io.EOF {
@@ -93,22 +111,4 @@ func (s *Store) save() {
 			break
 		}
 	}
-}
-
-func NewStore() *Store {
-	store := &Store{
-		saveChan: make(chan record, 100),
-		urls:     make(UrlMap),
-	}
-	f, err := os.OpenFile("store.json", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	store.file = f
-	err = store.load()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	go store.save()
-	return store
 }
