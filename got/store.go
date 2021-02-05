@@ -19,10 +19,11 @@ type record struct {
 }
 
 type Store struct {
-	file *os.File
-	rw   sync.RWMutex
-	key  int64
-	urls UrlMap
+	saveChan chan record
+	file     *os.File
+	rw       sync.RWMutex
+	key      int64
+	urls     UrlMap
 }
 
 func (s *Store) Set(key, url string) {
@@ -40,10 +41,7 @@ func (s *Store) Add(url string) (string, error) {
 		return "", errors.New(key + "is exist")
 	}
 	s.urls[key] = url
-	err := s.save(key, url)
-	if err != nil {
-		log.Println(err.Error())
-	}
+	s.saveChan <- record{key, url}
 	return fmt.Sprintf("http://localhost:8000/%s", key), nil
 }
 
@@ -82,14 +80,25 @@ func (s *Store) load() error {
 	return err
 }
 
-func (s *Store) save(key, url string) error {
-	encoder := json.NewEncoder(s.file)
-	return encoder.Encode(record{key, url})
+func (s *Store) save() {
+	for {
+		r, ok := <-s.saveChan
+		if ok {
+			encoder := json.NewEncoder(s.file)
+			err := encoder.Encode(r)
+			if err != nil {
+				log.Println(err.Error())
+			}
+		} else {
+			break
+		}
+	}
 }
 
 func NewStore() *Store {
 	store := &Store{
-		urls: make(UrlMap),
+		saveChan: make(chan record, 100),
+		urls:     make(UrlMap),
 	}
 	f, err := os.OpenFile("store.json", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
@@ -100,5 +109,6 @@ func NewStore() *Store {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	go store.save()
 	return store
 }
