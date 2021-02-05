@@ -68,7 +68,11 @@ func (s *Store) load() error {
 	for err == nil {
 		var r record
 		if err = decoder.Decode(&r); err == nil {
-			s.key = r.Key
+			var err1 error
+			s.key, err1 = strconv.ParseInt(r.Key, 10, 64)
+			if err1 != nil {
+				log.Println(err1.Error())
+			}
 			s.Set(r.Key, r.Url)
 		}
 	}
