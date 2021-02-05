@@ -67,6 +67,12 @@ func (s *Store) Get(key string) (string, error) {
 	return v, nil
 }
 
+func (s *Store) GetUrls() UrlMap {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
+	return s.urls
+}
+
 func (s *Store) set(key, url string) {
 	s.rw.Lock()
 	defer s.rw.Unlock()

@@ -1,9 +1,11 @@
 package got
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 )
 
 var formStr = `<form action="/add" method="post">
@@ -40,4 +42,23 @@ func Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
+}
+
+func Show(w http.ResponseWriter, r *http.Request) {
+	urls := store.GetUrls()
+	var keys = make([]string, len(urls))
+	idx := 0
+	for k, _ := range urls {
+		keys[idx] = k
+		idx += 1
+	}
+	sort.Strings(keys)
+	var buffer = bytes.NewBufferString("")
+	for i := 0; i < len(keys); i++ {
+		buffer.WriteString(keys[i])
+		buffer.WriteString(" : ")
+		buffer.WriteString(urls[keys[i]])
+		buffer.WriteString("\n")
+	}
+	w.Write(buffer.Bytes())
 }

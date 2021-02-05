@@ -10,6 +10,7 @@ import (
 func main() {
 	http.HandleFunc("/", got.Redirect)
 	http.HandleFunc("/add", got.Add)
+	http.HandleFunc("/show", got.Show)
 	log.Println("http server listening on :8000")
 	err := http.ListenAndServe(":8000", nil)
 	if err != nil {
